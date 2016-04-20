@@ -1,0 +1,26 @@
+wifi.setmode(wifi.STATION)
+wifi.setphymode(wifi.PHYMODE_N)
+wifi.sta.config('WIFI_SSID', 'wifipassword')
+wifi.sta.connect()
+wifi.sta.setip({ip='192.168.0.254',netmask='255.255.255.0',gateway='192.168.0.1'})
+m = mqtt.Client('nodemcu',90,'mqttuser','mqttpssword')
+bmp085.init(1, 2)
+function loop() 
+ if wifi.sta.status() == 5 then
+   tmr.stop(0)
+   local a = {}
+   m:connect('192.168.0.2', 1883, 0, 1, function(conn)
+    tmr.alarm(0, 120 * 1000, 1, function() 
+      status, temp, humi, temp_dec, humi_dec = dht.read(5)
+      temp2 = bmp085.temperature()
+      a['temperature'] = string.format('%d.%01d', math.floor(temp), temp_dec)
+      a['humidity'] = string.format('%d.%01d', math.floor(humi), humi_dec)
+      a['adc'] = adc.read(0)
+      a['pressure'] = bmp085.pressure()
+      a['temperature2'] = string.format('%d.%01d', temp2 / 10, temp2 % 10)
+      m:publish('/nodemcu/meteostation', cjson.encode(a) ,0,0)
+   end)
+  end)
+ end
+end
+tmr.alarm(0, 500, 1, function() loop() end)
