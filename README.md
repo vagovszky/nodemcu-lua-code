@@ -3,3 +3,6 @@ Nodemcu lua code
 
 ## meteostation
 Nodemcu meteostation with DHT22, BMP180, photoresistor
+
+## relay
+Relay controller over MQTT
