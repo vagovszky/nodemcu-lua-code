@@ -51,7 +51,6 @@ enduser_setup.manual(true)
 enduser_setup.start(
   function()
     led(2, true)
-    enduser_setup.stop()
     main()
   end,
   function(err, str)
