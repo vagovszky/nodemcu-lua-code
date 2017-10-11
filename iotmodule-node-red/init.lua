@@ -106,12 +106,16 @@ function main()
             sensorData.temperature = 0
             sensorData.humidity = 0
             sensorData.wifi = 0
+            sensorData.register = 255
             if dhtEnabled then
                 status, temp, humi, temp_dec, humi_dec = dht.read(DHT_DATA_PIN)
                 if status == dht.OK then
                     sensorData.temperature = string.format('%d.%01d', math.floor(temp), temp_dec)
                     sensorData.humidity = string.format('%d.%01d', math.floor(humi), humi_dec)
                 end
+            end
+            if pcf8574enabled then
+                sensorData.register = register
             end
             sensorData.wifi = wifi.sta.getrssi()
             gpio.write(MQTT_STATUS_LED, gpio.HIGH)
