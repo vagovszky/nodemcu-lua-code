@@ -20,16 +20,29 @@ dhtEnabled = false
 pcf8574enabled = false
 
 print("IOT Module initializing...")
-
 tmr.create():alarm(2000, tmr.ALARM_SINGLE, function() setup() end)
 
 function setup()
+    -- Pin setup
     print("IOT Module entering setup...")
     gpio.mode(MQTT_STATUS_LED, gpio.OUTPUT)
     gpio.write(MQTT_STATUS_LED, gpio.HIGH)
     gpio.mode(INT_PIN,gpio.INT,gpio.PULLUP)
     i2c.setup(0, SDA_PIN, SCL_PIN, i2c.SLOW)
+    -- MQTT setup
     m = mqtt.Client(MQTT_CLIENT_ID,120,MQTT_USER_NAME,MQTT_PASSWORD)
+    -- Check if modules are available
+    status, temp, humi, temp_dec, humi_dec = dht.read(DHT_DATA_PIN)
+    numB = pcf8574.write(register)
+    if numB > 0 then 
+        pcf8574enabled = true 
+        print("PCF8574 connected...")
+    end
+    if status == dht.OK then 
+        dhtEnabled = true 
+        print("DHT module connected...")
+    end
+    -- Handle incomming messages (pin sets)
     m:on("message", function(m,topic,data) 
         print(topic .. " " .. data)
         if pcf8574enabled and topic == 'iotmodule/output' then
@@ -45,17 +58,7 @@ function setup()
             end 
         end
     end)
-    -- Check if modules are available
-    status, temp, humi, temp_dec, humi_dec = dht.read(DHT_DATA_PIN)
-    numB = pcf8574.write(register)
-    if numB > 0 then 
-        pcf8574enabled = true 
-        print("PCF8574 connected...")
-    end
-    if status == dht.OK then 
-        dhtEnabled = true 
-        print("DHT module connected...")
-    end
+    -- Wifi starting
     print("Starting wifi...")
     wifi.setmode(wifi.STATION)
     wifi.setphymode(wifi.PHYMODE_N)
@@ -84,18 +87,19 @@ function main()
         -- Handle button press
         gpio.trig(INT_PIN, "down", function(level, when) 
             local port = string.byte(pcf8574.read())
+            local res = {}
             if port ~= nil then
                 if port ~= register then
                     local pxor = bit.bxor(port, register)
-                    local bitN = 0
+                    local res.bit = 0
                     for i = 0,7 do
                         if (2 ^ i) == pxor then
-                            bitN = i
+                            res.bit = i
                             break
                         end
                     end
-                    m:publish('iotmodule/input', bitN ,0,0, function(client)
-                        print('iotmodule/input '..bitN) 
+                    m:publish('iotmodule/input', sjson.encode(res) ,0,0, function(client)
+                        print('iotmodule/input '..sjson.encode(res)) 
                     end)
                 end
             end
