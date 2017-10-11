@@ -91,7 +91,7 @@ function main()
             if port ~= nil then
                 if port ~= register then
                     local pxor = bit.bxor(port, register)
-                    local res.bit = 0
+                    res.bit = 0
                     for i = 0,7 do
                         if (2 ^ i) == pxor then
                             res.bit = i
