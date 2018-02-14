@@ -19,9 +19,15 @@ wifi.setmode(wifi.STATION)
 wifi.setphymode(wifi.PHYMODE_N)
 wifi.sta.config(WIFI_NAME, WIFI_PASSWORD)
 wifi.sta.connect()
-tmr.alarm(0, 500, 1, function()
+
+tmr.alarm(0, 20000, tmr.ALARM_SINGLE, function()
+    gpio.write(MQTT_STATUS_LED, gpio.HIGH)
+    node.dsleep(0,2)
+end)
+
+tmr.alarm(1, 500, 1, function()
     if wifi.sta.status() == 5 then
-        tmr.stop(0)
+        tmr.stop(1)
         gpio.write(MQTT_STATUS_LED, gpio.LOW)
         m:connect(MQTT_HOST, 1883, 0, 1, function(client)
             m:publish('home/sensors/doors/entry', cjson.encode({open=true}) ,0,0, function()
